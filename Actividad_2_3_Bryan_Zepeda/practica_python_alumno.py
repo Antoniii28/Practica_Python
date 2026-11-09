@@ -1,5 +1,5 @@
 # Act. 2.3: Práctica Python
-# Bryan Zepeda Cuauhtencos
+# Brayan Zepeda Cuahutencos
 
 import re
 
