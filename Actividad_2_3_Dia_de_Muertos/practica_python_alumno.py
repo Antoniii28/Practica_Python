@@ -1,27 +1,25 @@
-# Actividad 2.3 - Práctica Python
-# Minería de Texto - Día de Muertos
+# Act. 2.3: Práctica Python
 # Jose Antonio Flores Cuamatzi
 
 import re
 
-
 def normalizar(texto):
-    # Minúsculas, sin puntuación y conservando acentos.
-    return re.sub(r'[¡!¿?.,]', '', texto.lower())
+    # Paso 1: minúsculas y sin signos; conserva acentos.
+    return re.sub(r'[¡!¿?.,;:«»]', '', texto.lower())
 
+def tokenizar(texto_normalizado):
+    # Paso 2: separar el texto en palabras.
+    return texto_normalizado.split()
 
-def tokenizar(texto):
-    # Separa las palabras por espacios.
-    return texto.split()
-
-
-def construir_vocabulario(tokens):
-    # Quita repetidos y ordena las palabras.
-    return sorted(set(tokens))
-
+def construir_vocabulario(tokens_por_doc):
+    # Paso 3: juntar las palabras, quitar repetidas y ordenar.
+    palabras = []
+    for tokens in tokens_por_doc:
+        palabras.extend(tokens)
+    return sorted(set(palabras))
 
 def quitar_stopwords(vocabulario, stopwords):
-    # Elimina las palabras vacías.
+    # Paso 4: conservar las palabras que no son stopwords.
     return [palabra for palabra in vocabulario if palabra not in stopwords]
 
 CORPUS = {
@@ -32,22 +30,38 @@ CORPUS = {
 }
 STOPWORDS = set(['a','al','aquí','con','de','del','el','en','es','esta','la','las','los','mi','muy','no','para','pero','por','porque','se','son','un','una','y'])
 
-ESPERADOS = {'A': (36, 25, 10, 15), 'B': (39, 27, 9, 18), 'C': (42, 32, 15, 17), 'D': (40, 31, 11, 20)}
+TITULOS = {'A':'Primera vez: emoción y asombro','B':'Turismo y comercialización','C':'Día de Muertos frente a Halloween','D':'Gastronomía, patrimonio y cementerios'}
+ESPERADOS = {'A':[36,25,10,15],'B':[39,27,9,18],'C':[42,32,15,17],'D':[40,31,11,20]}
 
-for nombre, comentarios in CORPUS.items():
-    tokens = []
+def procesar_corpus(comentarios):
+    tokens_por_doc = []
     for comentario in comentarios:
-        tokens.extend(tokenizar(normalizar(comentario)))
-    vocabulario = construir_vocabulario(tokens)
+        limpio = normalizar(comentario)
+        tokens_por_doc.append(tokenizar(limpio))
+    vocabulario = construir_vocabulario(tokens_por_doc)
     filtrado = quitar_stopwords(vocabulario, STOPWORDS)
-    cantidad_stopwords = len(vocabulario) - len(filtrado)
-    resultado = (len(tokens), len(vocabulario), cantidad_stopwords, len(filtrado))
-    assert resultado == ESPERADOS[nombre], f'Error en corpus {nombre}: {resultado}'
-    print(f'CORPUS {nombre} — VALIDADO')
-    print(f'Tokens totales: {resultado[0]}')
-    print(f'Vocabulario: {resultado[1]}')
-    print(f'Stopwords identificadas: {resultado[2]}')
-    print(f'Vocabulario filtrado: {resultado[3]}')
-    print(f'Porcentaje de stopwords: {cantidad_stopwords / len(vocabulario) * 100:.2f}%')
-    print('Palabras útiles:', ', '.join(filtrado))
+    n = sum(len(tokens) for tokens in tokens_por_doc)
+    s = len(vocabulario) - len(filtrado)
+    return {'N': n, 'V': vocabulario, 'S': s, 'Vf': filtrado, 'porcentaje': s / len(vocabulario) * 100}
+
+def ficha_metricas(corpus, resultado):
+    n, v, s, vf = ESPERADOS[corpus]
+    valores = [resultado['N'], len(resultado['V']), resultado['S'], len(resultado['Vf']), resultado['porcentaje']]
+    esperados = [n, v, s, vf, s / v * 100]
+    nombres = ['1. Tokens totales (N)', '2. Vocabulario |V|', '3. Stopwords |S|', '4. Vocabulario filtrado |Vfiltrado|', '5. Stopwords respecto de V (%)']
+    print(f'FICHA DE MÉTRICAS · Corpus {corpus} · {TITULOS[corpus]}')
+    print('Métrica                              Valor     Estado')
+    correctas = 0
+    for i, (nombre, valor, esperado) in enumerate(zip(nombres, valores, esperados)):
+        bien = abs(valor - esperado) < 0.01
+        correctas += bien
+        valor_texto = f'{valor:.2f}' if i == 4 else str(valor)
+        print(f'{nombre:<37}{valor_texto:<10}{"✓ correcto" if bien else "✗ revisar"}')
+    if correctas == 5:
+        print('RESULTADO: ficha completa ✓ ¡Corpus validado!')
+    else:
+        print(f'RESULTADO: {correctas} de 5 métricas correctas. Corrige y vuelve a ejecutar.')
+
+for corpus in CORPUS:
+    ficha_metricas(corpus, procesar_corpus(CORPUS[corpus]))
     print()
